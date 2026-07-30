@@ -1,6 +1,8 @@
 const { DataTypes } = require('sequelize');
+const bcrypt = require('bcrypt');
 const db = require('./db.js');
 
+const isBcryptHash = (str) => /^\$2[aby]\$\d{2}\$/.test(str);
 
 /* 
     User Table
@@ -27,7 +29,14 @@ const User = db.define('User', {
   }
 }, {
   tableName: 'users',
-  timestamps: true
+  timestamps: true,
+  hooks: {
+    beforeCreate: async(user) =>{
+      if (!isBcryptHash(user.password)) {
+        user.password = await bcrypt.hash(user.password, 10);
+      }
+    }
+  }
 });
 
 
