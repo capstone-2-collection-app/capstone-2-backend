@@ -45,6 +45,10 @@ const Collection = db.define('Collection', {
     type: DataTypes.INTEGER,
     allowNull: true // collection can exist without a user
   },
+  guest_id: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
   parent_id: {
     type: DataTypes.INTEGER,
     allowNull: true // null = top-level collection
