@@ -7,7 +7,9 @@ const guestIdMiddleware = (req, res, next) =>{
             maxAge: 1000*60*60*24*30,
             httpOnly: true,
             sameSite: 'lax'
-        });
+        }
+    );
+        console.log(guest_id)
         req.guest_id = guest_id;
     } else{
         req.guest_id = req.cookies.guest_id;

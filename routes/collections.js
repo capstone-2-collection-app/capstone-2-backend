@@ -16,7 +16,7 @@ const router = express.Router()
 router.get("/collections", async (req, res) => {
   try {
     const collections = await Collection.findAll({
-      where: { parent_id: null, guest_id: req.guestId},
+      where: { parent_id: null, guest_id: req.guest_id},
       include: {
         model: Collection,
         as: 'children',
@@ -73,7 +73,7 @@ router.post('/collections/:parentId/children', async (req, res) => {
     }
 
     // Ownership check
-    if (parent.guest_id !== req.guestId) {
+    if (parent.guest_id !== req.guest_id) {
       return res.status(403).json({ error: 'You do not have access to this collection' });
     }
 
@@ -102,7 +102,7 @@ router.post('/collections', async (req, res) => {
     const collection = await Collection.create({
       name,
       category,
-      guest_id: req.guestId
+      guest_id: req.guest_id
     });
 
     res.status(201).json(collection);
