@@ -1,4 +1,5 @@
 //nmp packages
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const app = express();
@@ -7,6 +8,7 @@ const userRouters = require("./routes/userRoutes.js");
 const search_router = require("./routes/search_router.js");
 const collection_router = require("./routes/collections.js");
 const errorHandler = require("./middleware/errorHandler.js");
+const port = process.env.PORT;
 
 //middleware
 app.use(express.json());
@@ -24,6 +26,6 @@ app.use(errorHandler);
 
 db.sync()
   .then(() => {
-    app.listen(3000, () => console.log("Server running on port 3000"));
+    app.listen(port, () => console.log("Server running on port 3000"));
   })
   .catch((err) => console.error(err));

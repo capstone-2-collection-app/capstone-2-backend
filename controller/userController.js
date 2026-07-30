@@ -1,6 +1,12 @@
 const { User } = require("./../database/models");
 const bcrypt = require("bcrypt"); // import bcrypt
 const validator = require("validator");
+const jwt = require("jsonwebtoken");
+
+// create token
+const createToken = (id) => {
+  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "3d" });
+};
 
 // login user
 const loginUser = async (req, res) => {
@@ -53,10 +59,14 @@ const signupUser = async (req, res) => {
       password: hash,
     });
 
+    // create jwt
+    const token = createToken(newUser.id);
+
     // respond
     res.status(201).json({
       name: newUser.name,
       email: newUser.email,
+      token,
     });
   } catch (error) {
     res.status(400).json(error.message);
