@@ -1,17 +1,28 @@
 //nmp packages
 const express = require("express");
 const cors = require("cors");
-const app = express();
+const cookieParser = require("cookie-parser")
+
 const { db } = require("./database/index.js");
-const userRouters = require("./routes/userRoutes.js");
-const search_router = require("./routes/search_router.js")
-const collection_router = require("./routes/collections.js")
+
 const errorHandler = require("./middleware/errorHandler.js");
+const guestIdMiddleware = require("./middleware/cookieParser.js");
+
+const app = express();
+
 
 //middleware
 app.use(express.json());
 app.use(cors());
+app.use(cookieParser());
+
 app.use(errorHandler);
+app.use(guestIdMiddleware)
+
+//Mount routes after guestIdMiddleware 
+const userRouters = require("./routes/userRoutes.js");
+const search_router = require("./routes/search_router.js")
+const collection_router = require("./routes/collections.js")
 
 //Routes
 app.use('/search', search_router)
