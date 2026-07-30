@@ -8,13 +8,13 @@ app.use(express.json());
 app.get('/search', async (req, res) => {
   try {
     const apiKey = process.env.LASTFM_API_KEY;
-    const track = req.query.track || req.body.track;
+    const search = req.query.search || req.body.search;
 
-    if (!track) {
-      return res.status(400).json({ error: 'track is required in request body' });
+    if (!search) {
+      return res.status(400).json({ error: 'search is required in request body' });
     }
 
-    const url = `http://ws.audioscrobbler.com/2.0/?method=track.search&track=${encodeURIComponent(track)}&api_key=${apiKey}&format=json`;
+    const url = `http://ws.audioscrobbler.com/2.0/?method=track.search&track=${encodeURIComponent(search)}&api_key=${apiKey}&format=json`;
 
     const response = await fetch(url);
 
