@@ -105,7 +105,7 @@ const Movie = db.define('Movie', {
 });
 
 
-const CollectionTrack = sequelize.define('CollectionTrack', {
+const CollectionTrack = db.define('CollectionTrack', {
   collection_id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
@@ -122,7 +122,7 @@ const CollectionTrack = sequelize.define('CollectionTrack', {
 });
 
 
-const CollectionMovie = sequelize.define('CollectionMovie', {
+const CollectionMovie = db.define('CollectionMovie', {
   collection_id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
