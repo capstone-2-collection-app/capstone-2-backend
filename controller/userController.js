@@ -1,5 +1,6 @@
 const { User } = require("./../database/models");
 const bcrypt = require("bcrypt"); // import bcrypt
+const validator = require("validator");
 
 // login user
 const loginUser = async (req, res) => {
@@ -14,6 +15,20 @@ const signupUser = async (req, res) => {
     // validate all inputs
     if (!name || !email || !password) {
       return res.status(400).json({ message: "Input Require For All Fields" });
+    }
+
+    // validate valid email
+    if (!validator.isEmail(email)) {
+      return res.status(400).json({
+        message: "Please enter the valid email address.",
+      });
+    }
+
+    // valide strong password (CapitalLowerCase!@#Number)
+    if (!validator.isStrongPassword(password)) {
+      return res.status(400).json({
+        message: "Password is not strong enough.",
+      });
     }
 
     // check if the email is already registered
