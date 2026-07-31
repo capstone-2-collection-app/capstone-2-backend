@@ -10,7 +10,49 @@ const createToken = (id) => {
 
 // login user
 const loginUser = async (req, res) => {
-  res.json({ message: "user login" });
+  const { email, password } = req.body;
+
+  try {
+    //check the input fields
+    if (!email || !password) {
+      return res.status(400).json({
+        message: "Input cannot be empty.",
+      });
+    }
+
+    const user = await User.findOne({
+      where: { email },
+    });
+
+    // if user not found by this email -> then email is incorrect
+    if (!user) {
+      return res.status(400).json({
+        message: "Incorrect Email.",
+      });
+    }
+
+    // if the email is correct -> check the password
+    const isCorrectPw = await bcrypt.compare(password, user.password);
+
+    // if the password is not correct
+    if (!isCorrectPw) {
+      return res.status(400).json({
+        message: "Incorrect Password.",
+      });
+    }
+
+    // if email and password match! token for you
+    const token = createToken(user.id);
+
+    res.status(200).json({
+      email,
+      token,
+    });
+  } catch (error) {
+    res.status(400).json({
+      message: error.message,
+    });
+  }
 };
 
 // signup user
