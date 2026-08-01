@@ -9,7 +9,14 @@ const {
   CollectionTrack,
   CollectionMovie,
 } = require("../database/index");
+
+// import auth middleware
+const requireAuth = require("./../middleware/requireAuth");
+
 const router = express.Router();
+
+// protect the backend route
+router.use(requireAuth);
 
 // GET all top-level collections belonging to the current guest,
 // with two levels of nested children (children + grandchildren) included.
