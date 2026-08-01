@@ -1,43 +1,39 @@
-//nmp packages
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-const cookieParser = require("cookie-parser")
+const cookieParser = require("cookie-parser");
 
 const { db } = require("./database/index.js");
-
-const errorHandler = require("./middleware/errorHandler.js");
+const userRouters = require("./routes/userRoutes.js");
+const searchRouter = require("./routes/search_router.js");
+const collectionRouter = require("./routes/collections.js");
 const guestIdMiddleware = require("./middleware/cookieParser.js");
+const errorHandler = require("./middleware/errorHandler.js");
 
 const app = express();
+const port = process.env.PORT || 3000;
 
-
-//middleware
 app.use(express.json());
-// app.use(cors())
-app.use(cors({
-  origin: 'http://localhost:5173',
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  }),
+);
+
 app.use(cookieParser());
-
 app.use(guestIdMiddleware);
+
+// public route
+app.use("/user", userRouters);
+
+app.use("/search", searchRouter); // added auth - only authorized user can request this route
+app.use("/api", collectionRouter); // added auth - only authorized user can request the route
+
 app.use(errorHandler);
-
-//Mount routes after guestIdMiddleware 
-const userRouters = require("./routes/userRoutes.js");
-const search_router = require("./routes/search_router.js")
-const collection_router = require("./routes/collections.js")
-
-//Routes
-app.use('/search', search_router)
-app.use('/api', collection_router)
-
-// router for auth
-app.use("/user", userRouters); // mounted userRouters
-
 
 db.sync()
   .then(() => {
-    app.listen(3000, () => console.log("Server running on port 3000"));
+    app.listen(port, () => console.log(`Server running on port ${port}`));
   })
   .catch((err) => console.error(err));
