@@ -1,31 +1,36 @@
-//nmp packages
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-const app = express();
+const cookieParser = require("cookie-parser");
+
 const { db } = require("./database/index.js");
 const userRouters = require("./routes/userRoutes.js");
-const search_router = require("./routes/search_router.js");
-const collection_router = require("./routes/collections.js");
+const searchRouter = require("./routes/search_router.js");
+const collectionRouter = require("./routes/collections.js");
+const guestIdMiddleware = require("./middleware/cookieParser.js");
 const errorHandler = require("./middleware/errorHandler.js");
-const port = process.env.PORT;
 
-//middleware
+const app = express();
+const port = process.env.PORT || 3000;
+
 app.use(express.json());
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  }),
+);
+app.use(cookieParser());
+app.use(guestIdMiddleware);
 
-//Routes
-app.use("/search", search_router);
-app.use("/api", collection_router);
+app.use("/search", searchRouter);
+app.use("/api", collectionRouter);
+app.use("/user", userRouters);
 
-// router for auth
-app.use("/user", userRouters); // mounted userRouters
-
-// error handler at the end
 app.use(errorHandler);
 
 db.sync()
   .then(() => {
-    app.listen(port, () => console.log("Server running on port 3000"));
+    app.listen(port, () => console.log(`Server running on port ${port}`));
   })
   .catch((err) => console.error(err));

@@ -9,12 +9,12 @@ const seed = async () => {
     const alice = await User.create({
       name: "Alice Johnson",
       email: "alice@example.com",
-      password: "test123",
+      password: "randomPassword123"
     });
     const bob = await User.create({
       name: "Bob Smith",
       email: "bob@example.com",
-      password: "bob123456",
+      password: "randomPassword456"
     });
 
     // ----- Tracks -----
