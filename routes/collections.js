@@ -1,4 +1,5 @@
 const express = require("express");
+const { Op, fn, col, where } = require("sequelize");
 const {
   db,
   User,
@@ -6,30 +7,29 @@ const {
   Track,
   Movie,
   CollectionTrack,
-  CollectionMovie
-} = require("../database/index")
-const router = express.Router()
-
+  CollectionMovie,
+} = require("../database/index");
+const router = express.Router();
 
 // GET all top-level collections belonging to the current guest,
 // with two levels of nested children (children + grandchildren) included.
 router.get("/collections", async (req, res) => {
   try {
     const collections = await Collection.findAll({
-      where: { parent_id: null, guest_id: req.guest_id},
+      where: { parent_id: null, guest_id: req.guest_id },
       include: {
         model: Collection,
-        as: 'children',
+        as: "children",
         include: {
           model: Collection,
-          as: 'children' // grandchildren
-        }
-      }
+          as: "children", // grandchildren
+        },
+      },
     });
     res.json(collections);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Something went wrong' });
+    res.status(500).json({ error: "Something went wrong" });
   }
 });
 
@@ -38,79 +38,232 @@ router.get("/collections", async (req, res) => {
 router.get("/collections/:id", async (req, res) => {
   try {
     const collection = await Collection.findByPk(req.params.id, {
+      include: {
+        model: Collection,
+        as: "children",
         include: {
-            model: Collection,
-            as: 'children',
-            include: {
-            model: Collection,
-            as: 'children' // grandchildren
-            }
-        }
-
+          model: Collection,
+          as: "children", // grandchildren
+        },
+      },
     });
     res.json(collection);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Something went wrong' });
+    res.status(500).json({ error: "Something went wrong" });
   }
 });
 
-
 // Creates a new child collection under an existing parent collection.
 // NOTE: comment says PATCH but this is actually a POST route - see below.
-router.post('/collections/:parentId/children', async (req, res) => {
+router.post("/collections/:parentId/children", async (req, res) => {
   try {
     const { parentId } = req.params;
     const { name, category } = req.body;
 
     if (!name || !category) {
-      return res.status(400).json({ error: 'name and category are required' });
+      return res.status(400).json({ error: "name and category are required" });
     }
 
     const parent = await Collection.findByPk(parentId);
     if (!parent) {
-      return res.status(404).json({ error: 'Parent collection not found' });
+      return res.status(404).json({ error: "Parent collection not found" });
     }
 
     // Ownership check
     if (parent.guest_id !== req.guest_id) {
-      return res.status(403).json({ error: 'You do not have access to this collection' });
+      return res
+        .status(403)
+        .json({ error: "You do not have access to this collection" });
     }
 
     const child = await Collection.create({
       name,
       category,
       parent_id: parent.collection_id,
-      user_id: parent.user_id
+      user_id: parent.user_id,
+      guest_id: parent.guest_id,
     });
 
     res.status(201).json(child);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Something went wrong' });
+    res.status(500).json({ error: "Something went wrong" });
+  }
+});
+
+// Adds a song to a collection. If the track doesn't exist yet, it creates it;
+// if it already exists, it reuses it and just links it to this collection.
+router.post("/collections/:id/tracks", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, artist } = req.body;
+
+    if (!name || !artist) {
+      return res.status(400).json({ error: "name and artist are required" });
+    }
+
+    const collection = await Collection.findByPk(id);
+    if (!collection) {
+      return res.status(404).json({ error: "Collection not found" });
+    }
+
+    if (collection.category != "music") {
+      return res.status(400).json({ error: "Collection of wrong category" });
+    }
+
+    if (collection.guest_id !== req.guest_id) {
+      return res
+        .status(403)
+        .json({ error: "You do not have access to this collection" });
+    }
+
+    const [track] = await Track.findOrCreate({
+      where: { name, artist },
+    });
+
+    await collection.addTrack(track);
+
+    res.status(201).json(track);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Something went wrong" });
   }
 });
 
 // Creates a new top-level collection (no parent) owned by the current guest.
-router.post('/collections', async (req, res) => {
+router.post("/collections", async (req, res) => {
   try {
     const { name, category } = req.body;
     if (!name || !category) {
-      return res.status(400).json({ error: 'name and category are required' });
+      return res.status(400).json({ error: "name and category are required" });
     }
 
     const collection = await Collection.create({
       name,
-      category,
-      guest_id: req.guest_id
+      category: category?.toLowerCase(),
+      guest_id: req.guest_id,
     });
 
     res.status(201).json(collection);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Something went wrong' });
+    res.status(500).json({ error: "Something went wrong" });
   }
 });
 
+router.delete("/collections/:id", async (req, res) => {
+  try {
+    console.log("hit");
+    const collection = await Collection.findByPk(req.params.id);
+    console.log(collection);
+    if (!collection) {
+      return res.status(404).json({ error: "Collection not found" });
+    }
+
+    if (collection.guest_id !== req.guest_id) {
+      return res
+        .status(403)
+        .json({ error: "You do not have access to this collection" });
+    }
+
+    await collection.destroy();
+    console.log(collection, "deleted");
+
+    res.status(204).send(); // 204 No Content - standard for a successful delete
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Something went wrong" });
+  }
+});
+
+// GET tracks belonging to a specific collection
+router.get("/collections/:id/tracks", async (req, res) => {
+  console.log("hit")
+  try {
+    const collection = await Collection.findByPk(req.params.id);
+
+    if (!collection) {
+      return res.status(404).json({ error: "Collection not found" });
+    }
+
+    const tracks = await collection.getTracks();
+    console.log(tracks)
+    res.json(tracks);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Something went wrong" });
+  }
+});
+
+// DELETE - unlink a track from a collection (does not delete the Track row itself)
+router.delete("/collections/:id/tracks/:trackId", async (req, res) => {
+  try {
+    const collection = await Collection.findByPk(req.params.id);
+
+    if (!collection) {
+      return res.status(404).json({ error: "Collection not found" });
+    }
+
+    const track = await Track.findByPk(req.params.trackId);
+
+    if (!track) {
+      return res.status(404).json({ error: "Track not found" });
+    }
+
+    await collection.removeTrack(track);
+
+    res.status(204).end();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Something went wrong" });
+  }
+});
+
+
+
+// // GET movies belonging to a specific collection
+// router.get("/collections/:id/movies", async (req, res) => {
+//   try {
+//     const collection = await Collection.findByPk(req.params.id);
+
+//     if (!collection) {
+//       return res.status(404).json({ error: "Collection not found" });
+//     }
+
+//     const movies = await Movie.findAll({
+//       where: { collection_id: req.params.id },
+//     });
+
+//     res.json(movies);
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ error: "Something went wrong" });
+//   }
+// });
+
+// DELETE - unlink a movie from a collection (does not delete the Movie row itself)
+// router.delete("/collections/:id/movies/:movieId", async (req, res) => {
+//   try {
+//     const collection = await Collection.findByPk(req.params.id);
+
+//     if (!collection) {
+//       return res.status(404).json({ error: "Collection not found" });
+//     }
+
+//     const movie = await Movie.findByPk(req.params.movieId);
+
+//     if (!movie) {
+//       return res.status(404).json({ error: "Movie not found" });
+//     }
+
+//     await collection.removeMovie(movie);
+
+//     res.status(204).end();
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ error: "Something went wrong" });
+//   }
+// });
 
 module.exports = router;
