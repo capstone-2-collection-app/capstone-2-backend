@@ -1,13 +1,21 @@
 const express = require("express");
 const router = express.Router();
 
-router.get('/track', async (req, res) => {
+// import auth middleware
+const requireAuth = require("./..//middleware/requireAuth");
+
+// backend routes are authenticated and protected
+router.use(requireAuth);
+
+router.get("/track", async (req, res) => {
   try {
     const apiKey = process.env.LASTFM_API_KEY;
     const search = req.query.search || req.body.search;
 
     if (!search) {
-      return res.status(400).json({ error: 'search is required in request body' });
+      return res
+        .status(400)
+        .json({ error: "search is required in request body" });
     }
 
     const url = `http://ws.audioscrobbler.com/2.0/?method=track.search&track=${encodeURIComponent(search)}&api_key=${apiKey}&format=json`;
@@ -15,18 +23,19 @@ router.get('/track', async (req, res) => {
     const response = await fetch(url);
 
     if (!response.ok) {
-      return res.status(response.status).json({ error: 'Failed to fetch from Last.fm' });
+      return res
+        .status(response.status)
+        .json({ error: "Failed to fetch from Last.fm" });
     }
 
     const data = await response.json();
-    const tracks = data.results?.trackmatches?.track || []
-    const simplified = tracks.map(({name, artist}) => ({name, artist}));
+    const tracks = data.results?.trackmatches?.track || [];
+    const simplified = tracks.map(({ name, artist }) => ({ name, artist }));
     res.json(simplified);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Something went wrong' });
+    res.status(500).json({ error: "Something went wrong" });
   }
 });
 
-
-module.exports = router
+module.exports = router;

@@ -50,7 +50,7 @@ const loginUser = async (req, res) => {
     });
   } catch (error) {
     res.status(400).json({
-      message: error.message,
+      message: "Login Failed.",
     });
   }
 };
@@ -115,4 +115,11 @@ const signupUser = async (req, res) => {
   }
 };
 
-module.exports = { loginUser, signupUser };
+// logout
+const logoutUser = (req, res) => {
+  res.status(200).json({
+    message: "Successfully Logged out.",
+  });
+};
+
+module.exports = { loginUser, logoutUser, signupUser };

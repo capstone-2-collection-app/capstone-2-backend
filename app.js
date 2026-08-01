@@ -20,12 +20,15 @@ app.use(
     credentials: true,
   }),
 );
+
 app.use(cookieParser());
 app.use(guestIdMiddleware);
 
-app.use("/search", searchRouter);
-app.use("/api", collectionRouter);
+// public route
 app.use("/user", userRouters);
+
+app.use("/search", searchRouter); // added auth - only authorized user can request this route
+app.use("/api", collectionRouter); // added auth - only authorized user can request the route
 
 app.use(errorHandler);
 
