@@ -16,7 +16,7 @@ const port = process.env.PORT || 3000;
 app.use(express.json());
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: "https://capstone-2-frontend-gilt.vercel.app",
     credentials: true,
   }),
 );
