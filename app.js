@@ -7,6 +7,7 @@ const { db } = require("./database/index.js");
 const userRouters = require("./routes/userRoutes.js");
 const searchRouter = require("./routes/search_router.js");
 const collectionRouter = require("./routes/collections.js");
+const sharedCollectionRouter = require("./routes/sharedCollections.js");
 const guestIdMiddleware = require("./middleware/cookieParser.js");
 const errorHandler = require("./middleware/errorHandler.js");
 
@@ -30,6 +31,7 @@ app.use(guestIdMiddleware);
 app.use("/user", userRouters);
 
 app.use("/search", searchRouter); // added auth - only authorized user can request this route
+app.use("/api", sharedCollectionRouter);
 app.use("/api", collectionRouter); // added auth - only authorized user can request the route
 
 app.use(errorHandler);
