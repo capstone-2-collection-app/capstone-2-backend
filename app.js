@@ -25,6 +25,8 @@ app.use(cookieParser());
 app.use(guestIdMiddleware);
 
 // public route
+
+
 app.use("/user", userRouters);
 
 app.use("/search", searchRouter); // added auth - only authorized user can request this route
@@ -32,6 +34,9 @@ app.use("/api", collectionRouter); // added auth - only authorized user can requ
 
 app.use(errorHandler);
 
+app.get("*", (req, res)=>{
+  res.redirect("/user")
+})
 db.sync()
   .then(() => {
     app.listen(port, () => console.log(`Server running on port ${port}`));
