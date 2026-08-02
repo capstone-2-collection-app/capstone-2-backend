@@ -25,6 +25,10 @@ const User = db.define('User', {
   password: {
     type: DataTypes.STRING,
     allowNull: false
+  },
+  isGuest: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
   }
 }, {
   tableName: 'users',
@@ -52,10 +56,6 @@ const Collection = db.define('Collection', {
   user_id: {
     type: DataTypes.INTEGER,
     allowNull: true // collection can exist without a user
-  },
-  guest_id: {
-    type: DataTypes.STRING,
-    allowNull: true
   },
   parent_id: {
     type: DataTypes.INTEGER,

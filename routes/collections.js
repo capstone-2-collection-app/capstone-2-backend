@@ -21,9 +21,10 @@ router.use(requireAuth);
 // GET all top-level collections belonging to the current guest,
 // with two levels of nested children (children + grandchildren) included.
 router.get("/collections", async (req, res) => {
+  console.log("req.user:", req.user);
   try {
     const collections = await Collection.findAll({
-      where: { parent_id: null, guest_id: req.guest_id },
+      where: { parent_id: null, user_id: req.user.id },
       include: {
         model: Collection,
         as: "children",
@@ -62,7 +63,6 @@ router.get("/collections/:id", async (req, res) => {
 });
 
 // Creates a new child collection under an existing parent collection.
-// NOTE: comment says PATCH but this is actually a POST route - see below.
 router.post("/collections/:parentId/children", async (req, res) => {
   try {
     const { parentId } = req.params;
@@ -78,7 +78,7 @@ router.post("/collections/:parentId/children", async (req, res) => {
     }
 
     // Ownership check
-    if (parent.guest_id !== req.guest_id) {
+    if (parent.user_id !== req.user.id) {
       return res
         .status(403)
         .json({ error: "You do not have access to this collection" });
@@ -86,10 +86,9 @@ router.post("/collections/:parentId/children", async (req, res) => {
 
     const child = await Collection.create({
       name,
-      category,
+      category: category?.toLowerCase(),
       parent_id: parent.collection_id,
       user_id: parent.user_id,
-      guest_id: parent.guest_id,
     });
 
     res.status(201).json(child);
@@ -119,7 +118,7 @@ router.post("/collections/:id/tracks", async (req, res) => {
       return res.status(400).json({ error: "Collection of wrong category" });
     }
 
-    if (collection.guest_id !== req.guest_id) {
+    if (collection.user_id !== req.user.id) {
       return res
         .status(403)
         .json({ error: "You do not have access to this collection" });
@@ -140,6 +139,7 @@ router.post("/collections/:id/tracks", async (req, res) => {
 
 // Creates a new top-level collection (no parent) owned by the current guest.
 router.post("/collections", async (req, res) => {
+  
   try {
     const { name, category } = req.body;
     if (!name || !category) {
@@ -149,7 +149,7 @@ router.post("/collections", async (req, res) => {
     const collection = await Collection.create({
       name,
       category: category?.toLowerCase(),
-      guest_id: req.guest_id,
+      user_id: req.user.id,
     });
 
     res.status(201).json(collection);
@@ -168,7 +168,7 @@ router.delete("/collections/:id", async (req, res) => {
       return res.status(404).json({ error: "Collection not found" });
     }
 
-    if (collection.guest_id !== req.guest_id) {
+    if (collection.user_id !== req.user.id) {
       return res
         .status(403)
         .json({ error: "You do not have access to this collection" });
