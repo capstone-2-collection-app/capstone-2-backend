@@ -1,5 +1,6 @@
 const express = require("express");
 const { Op, fn, col, where } = require("sequelize");
+const { v4: uuidv4 } = require("uuid");
 const {
   db,
   User,
@@ -153,6 +154,33 @@ router.post("/collections", async (req, res) => {
     });
 
     res.status(201).json(collection);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Something went wrong" });
+  }
+});
+
+// Creates a share token for a collection owned by the current user.
+router.post("/collections/:id/share", async (req, res) => {
+  try {
+    const collection = await Collection.findByPk(req.params.id);
+
+    if (!collection) {
+      return res.status(404).json({ error: "Collection not found" });
+    }
+
+    if (collection.user_id !== req.user.id) {
+      return res
+        .status(403)
+        .json({ error: "You do not have access to this collection" });
+    }
+
+    if (!collection.share_token) {
+      collection.share_token = uuidv4();
+      await collection.save();
+    }
+
+    res.status(200).json({ share_token: collection.share_token });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Something went wrong" });
