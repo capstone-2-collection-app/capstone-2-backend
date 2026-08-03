@@ -1,5 +1,5 @@
 const express = require("express");
-const { validate: isUuid } = require("uuid");
+const jwt = require("jsonwebtoken");
 const { Collection } = require("../database/index");
 
 const router = express.Router();
@@ -42,12 +42,25 @@ async function getCollectionDetails(collection, depth = 0) {
 // This route is public so a visitor can open a shared link without logging in.
 router.get("/shared/:shareToken", async (req, res) => {
   try {
-    if (!isUuid(req.params.shareToken)) {
+    let verifiedToken;
+
+    try {
+      verifiedToken = jwt.verify(
+        req.params.shareToken,
+        process.env.JWT_SECRET,
+      );
+    } catch {
       return res.status(404).json({ error: "Shared collection not found" });
     }
 
-    const collection = await Collection.findOne({
-      where: { share_token: req.params.shareToken },
+    if (
+      verifiedToken.purpose !== "collection-share" ||
+      !verifiedToken.collection_id
+    ) {
+      return res.status(404).json({ error: "Shared collection not found" });
+    }
+
+    const collection = await Collection.findByPk(verifiedToken.collection_id, {
       attributes: ["collection_id", "name", "category"],
     });
 
