@@ -68,11 +68,6 @@ const Collection = db.define('Collection', {
   name: {
     type: DataTypes.STRING,
     allowNull: false
-  },
-  share_token: {
-    type: DataTypes.UUID,
-    allowNull: true,
-    unique: true
   }
 }, {
   tableName: 'collections',

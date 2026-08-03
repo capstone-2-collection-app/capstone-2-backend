@@ -1,6 +1,6 @@
 const express = require("express");
 const { Op, fn, col, where } = require("sequelize");
-const { v4: uuidv4 } = require("uuid");
+const jwt = require("jsonwebtoken");
 const {
   db,
   User,
@@ -175,12 +175,16 @@ router.post("/collections/:id/share", async (req, res) => {
         .json({ error: "You do not have access to this collection" });
     }
 
-    if (!collection.share_token) {
-      collection.share_token = uuidv4();
-      await collection.save();
-    }
+    const shareToken = jwt.sign(
+      {
+        collection_id: collection.collection_id,
+        purpose: "collection-share",
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" },
+    );
 
-    res.status(200).json({ share_token: collection.share_token });
+    res.status(200).json({ share_token: shareToken });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Something went wrong" });
