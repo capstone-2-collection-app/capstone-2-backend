@@ -226,6 +226,12 @@ router.get("/collections/:id/tracks", async (req, res) => {
       return res.status(404).json({ error: "Collection not found" });
     }
 
+    if (collection.user_id !== req.user.id) {
+      return res
+        .status(403)
+        .json({ error: "You do not have access to this collection" });
+    }
+
     const tracks = await collection.getTracks();
     console.log(tracks)
     res.json(tracks);
@@ -242,6 +248,12 @@ router.delete("/collections/:id/tracks/:trackId", async (req, res) => {
 
     if (!collection) {
       return res.status(404).json({ error: "Collection not found" });
+    }
+
+    if (collection.user_id !== req.user.id) {
+      return res
+        .status(403)
+        .json({ error: "You do not have access to this collection" });
     }
 
     const track = await Track.findByPk(req.params.trackId);
