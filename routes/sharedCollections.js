@@ -1,4 +1,5 @@
 const express = require("express");
+const { validate: isUuid } = require("uuid");
 const { Collection } = require("../database/index");
 
 const router = express.Router();
@@ -41,6 +42,10 @@ async function getCollectionDetails(collection, depth = 0) {
 // This route is public so a visitor can open a shared link without logging in.
 router.get("/shared/:shareToken", async (req, res) => {
   try {
+    if (!isUuid(req.params.shareToken)) {
+      return res.status(404).json({ error: "Shared collection not found" });
+    }
+
     const collection = await Collection.findOne({
       where: { share_token: req.params.shareToken },
       attributes: ["collection_id", "name", "category"],
