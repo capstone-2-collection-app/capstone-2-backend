@@ -7,16 +7,21 @@ const { db } = require("./database/index.js");
 const userRouters = require("./routes/userRoutes.js");
 const searchRouter = require("./routes/search_router.js");
 const collectionRouter = require("./routes/collections.js");
+const sharedCollectionRouter = require("./routes/sharedCollections.js");
 const guestIdMiddleware = require("./middleware/cookieParser.js");
 const errorHandler = require("./middleware/errorHandler.js");
 
 const app = express();
 const port = process.env.PORT || 3000;
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://capstone-2-frontend-gilt.vercel.app",
+];
 
 app.use(express.json());
 app.use(
   cors({
-    origin: "https://capstone-2-frontend-gilt.vercel.app",
+    origin: allowedOrigins,
     credentials: true,
   }),
 );
@@ -30,6 +35,7 @@ app.use(guestIdMiddleware);
 app.use("/user", userRouters);
 
 app.use("/search", searchRouter); // added auth - only authorized user can request this route
+app.use("/api", sharedCollectionRouter);
 app.use("/api", collectionRouter); // added auth - only authorized user can request the route
 
 app.use(errorHandler);
